@@ -9,7 +9,7 @@ import (
 const PORT = 22022
 
 var clients []net.Conn
-var match *Match
+var game *Game
 
 func RandomString(len int) string {
 	b := make([]byte, len)
@@ -56,25 +56,22 @@ func handleConn(client net.Conn) {
 		}
 
 		if req.Cmd == CREATE {
-			match = NewMatch()
-			client.Write([]byte(match.Name + "\n"))
+			game = NewGame()
+			game.White = NewPlayer(req.User, client)
+			client.Write([]byte(game.Name + "\n"))
+			fmt.Printf("Game created [%s]. White player[%s]\n", game.Name, game.White.User)
 		}
-		/*message, _ := b.ReadString('\n')
-		fields := strings.Split(message, ":")
-		if len(fields) > 2 {
-			user := fields[0]
-			cmd := fields[1]
-			//args := strings.Join(fields[1:], ":")
 
-			if cmd == "/join" {
-				if match == nil {
-					// Creamos nueva partida y asignamos blancas
-					match = NewMatch()
-
-				}
-				client.Write([]byte(match + "\n"))
+		if req.Cmd == JOIN {
+			if req.Args == game.Name {
+				game.Black = NewPlayer(req.User, client)
+				client.Write([]byte(game.White.User + "\n"))
+				game.White.Conn.Write([]byte(game.Black.User + "\n"))
+				fmt.Printf("Game start [%s]. Black player[%s]\n", game.Name, game.Black.User)
+			} else {
+				fmt.Printf("Game not found [%s]\n", req.Args)
 			}
-		}*/
+		}
 
 	}
 

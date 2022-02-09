@@ -11,14 +11,14 @@ func NewPlayer(username string, conn net.Conn) *Player {
 	return &Player{username, conn}
 }
 
-type Match struct {
+type Game struct {
 	Name  string  `json:"name"`
 	White *Player `json:"white"`
 	Black *Player `json:"black"`
 }
 
-func NewMatch() *Match {
-	m := new(Match)
+func NewGame() *Game {
+	m := new(Game)
 	m.Name = RandomString(10)
 	return m
 }
