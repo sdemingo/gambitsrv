@@ -10,7 +10,7 @@ import (
 const PORT = 22022
 
 var clients []net.Conn
-var game *Game
+//var game *Game
 var gameTable map[string] *Game
 
 func RandomString(len int) string {
@@ -53,6 +53,7 @@ func clientConns(listener net.Listener) chan net.Conn {
 func handleConn(client net.Conn) {
 	var clientGame *Game = nil
 	var clientName string
+	var ok bool
 	
 	for {
 		req, err := UnpackMsg(client)
@@ -61,38 +62,43 @@ func handleConn(client net.Conn) {
 		}
 
 		if req.Cmd == CREATE {
-			game = NewGame()
-			game.White = NewPlayer(req.User, client)
-			client.Write([]byte(game.Name + "\n"))
-			clientGame=game
+			clientGame = NewGame()
+			clientGame.White = NewPlayer(req.User, client)
+			client.Write([]byte(clientGame.Name + "\n"))
 			clientName=req.User
-			fmt.Printf("Game created [%s]. White player[%s]\n", game.Name, game.White.User)
+			gameTable[clientGame.Name]=clientGame
+			fmt.Printf("Game created [%s]. White player[%s]\n", clientGame.Name, clientGame.White.User)
 		}
 
 		if req.Cmd == JOIN {
-			// we need search the game in the gametable!! Now only have one game
-			if req.Args == game.Name {
-				game.Black = NewPlayer(req.User, client)
-				client.Write([]byte(game.White.User + "\n"))
-				game.White.Conn.Write([]byte(game.Black.User + "\n"))
-				clientGame=game
-				clientName=req.User
-				fmt.Printf("Game start [%s]. Black player[%s]\n", game.Name, game.Black.User)
-			} else {
+			if clientGame, ok = gameTable[req.Args]; !ok {
 				fmt.Printf("Game not found [%s]\n", req.Args)
+				return
 			}
+
+			clientGame.Black = NewPlayer(req.User, client)
+			client.Write([]byte(clientGame.White.User + "\n"))
+			clientGame.White.Conn.Write([]byte(clientGame.Black.User + "\n"))
+			clientName=req.User
+			fmt.Printf("Game start [%s]. Black player[%s]\n", clientGame.Name, clientGame.Black.User)
+
 		}
 
 		if req.Cmd == MOVE {
 			args := strings.Split(req.Args, ":")
 			if len(args) == 2 {
+				if clientGame, ok = gameTable[args[0]]; !ok {
+					fmt.Printf("Game not found [%s]\n", args[0])
+					return
+				}
+				
 				// we need search the game in the gametable!! Now only have one game
-				if req.User == game.Black.User {
-					game.White.Conn.Write(req.PackMsg())
-					fmt.Printf("Send move from [%s] to [%s]\n", game.Black.User, game.White.User)
+				if req.User == clientGame.Black.User {
+					clientGame.White.Conn.Write(req.PackMsg())
+					fmt.Printf("Send move from [%s] to [%s]\n", clientGame.Black.User, clientGame.White.User)
 				} else {
-					game.Black.Conn.Write(req.PackMsg())
-					fmt.Printf("Send move from [%s] to [%s]\n", game.White.User, game.Black.User)
+					clientGame.Black.Conn.Write(req.PackMsg())
+					fmt.Printf("Send move from [%s] to [%s]\n", clientGame.White.User, clientGame.Black.User)
 				}
 			}
 		}

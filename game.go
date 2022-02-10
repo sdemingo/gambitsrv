@@ -19,7 +19,7 @@ type Game struct {
 
 func NewGame() *Game {
 	m := new(Game)
-	m.Name = RandomString(10)
+	m.Name = RandomString(2)
 	return m
 }
 
