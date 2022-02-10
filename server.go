@@ -102,8 +102,12 @@ func handleConn(client net.Conn) {
 	fmt.Printf("End connection from %s\n", client.RemoteAddr())
 	if clientGame!=nil{
 		msg:=NewMsg(END,fmt.Sprintf("El jugador %s ha abandonado la partida",clientName))
-		clientGame.White.Conn.Write(msg.PackMsg())
-		clientGame.Black.Conn.Write(msg.PackMsg())
+		if clientGame.White !=nil && clientGame.White.Conn !=nil{
+			clientGame.White.Conn.Write(msg.PackMsg())
+		}
+		if clientGame.Black !=nil && clientGame.Black.Conn !=nil{
+			clientGame.Black.Conn.Write(msg.PackMsg())
+		}
 	}
 		
 }
