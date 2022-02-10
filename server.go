@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
+	"strings"
 )
 
 const PORT = 22022
@@ -63,6 +64,7 @@ func handleConn(client net.Conn) {
 		}
 
 		if req.Cmd == JOIN {
+			// we need search the game in the gametable!! Now only have one game
 			if req.Args == game.Name {
 				game.Black = NewPlayer(req.User, client)
 				client.Write([]byte(game.White.User + "\n"))
@@ -73,15 +75,21 @@ func handleConn(client net.Conn) {
 			}
 		}
 
+		if req.Cmd == MOVE {
+			args := strings.Split(req.Args, ":")
+			if len(args) == 2 {
+				// we need search the game in the gametable!! Now only have one game
+				if req.User == game.Black.User {
+					game.White.Conn.Write(req.PackMsg())
+					fmt.Printf("Send move from [%s] to [%s]\n", game.Black.User, game.White.User)
+				} else {
+					game.Black.Conn.Write(req.PackMsg())
+					fmt.Printf("Send move from [%s] to [%s]\n", game.White.User, game.Black.User)
+				}
+			}
+		}
+
 	}
 
 	fmt.Printf("End connection from %s\n", client.RemoteAddr())
 }
-
-/*
-func sendToClients(message string) {
-	for i := range clients {
-		clients[i].Write([]byte(message))
-	}
-}
-*/
