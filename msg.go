@@ -10,6 +10,7 @@ const (
 	CREATE = "create"
 	JOIN   = "join"
 	MOVE   = "move"
+	END    = "end"
 )
 
 type Msg struct {

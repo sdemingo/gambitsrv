@@ -22,3 +22,5 @@ func NewGame() *Game {
 	m.Name = RandomString(10)
 	return m
 }
+
+

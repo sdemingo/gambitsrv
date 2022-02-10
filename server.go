@@ -11,6 +11,7 @@ const PORT = 22022
 
 var clients []net.Conn
 var game *Game
+var gameTable map[string] *Game
 
 func RandomString(len int) string {
 	b := make([]byte, len)
@@ -23,7 +24,8 @@ func InitServer() {
 	conns := clientConns(srv)
 
 	clients = make([]net.Conn, 0)
-
+	gameTable = make(map[string]*Game)
+	
 	for {
 		go handleConn(<-conns)
 	}
@@ -49,7 +51,9 @@ func clientConns(listener net.Listener) chan net.Conn {
 }
 
 func handleConn(client net.Conn) {
-	//b := bufio.NewReader(client)
+	var clientGame *Game = nil
+	var clientName string
+	
 	for {
 		req, err := UnpackMsg(client)
 		if err != nil {
@@ -60,6 +64,8 @@ func handleConn(client net.Conn) {
 			game = NewGame()
 			game.White = NewPlayer(req.User, client)
 			client.Write([]byte(game.Name + "\n"))
+			clientGame=game
+			clientName=req.User
 			fmt.Printf("Game created [%s]. White player[%s]\n", game.Name, game.White.User)
 		}
 
@@ -69,6 +75,8 @@ func handleConn(client net.Conn) {
 				game.Black = NewPlayer(req.User, client)
 				client.Write([]byte(game.White.User + "\n"))
 				game.White.Conn.Write([]byte(game.Black.User + "\n"))
+				clientGame=game
+				clientName=req.User
 				fmt.Printf("Game start [%s]. Black player[%s]\n", game.Name, game.Black.User)
 			} else {
 				fmt.Printf("Game not found [%s]\n", req.Args)
@@ -92,4 +100,10 @@ func handleConn(client net.Conn) {
 	}
 
 	fmt.Printf("End connection from %s\n", client.RemoteAddr())
+	if clientGame!=nil{
+		msg:=NewMsg(END,fmt.Sprintf("El jugador %s ha abandonado la partida",clientName))
+		clientGame.White.Conn.Write(msg.PackMsg())
+		clientGame.Black.Conn.Write(msg.PackMsg())
+	}
+		
 }
