@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	ERROR  = "error"
+	OK     = "ok"
 	CREATE = "create"
 	JOIN   = "join"
 	MOVE   = "move"
@@ -19,8 +21,8 @@ type Msg struct {
 	Args string
 }
 
-func NewMsg(cmd string, username string) *Msg {
-	return &Msg{cmd, username, ""}
+func NewMsg(cmd string, username string, args string) *Msg {
+	return &Msg{cmd, username, args}
 }
 
 func UnpackMsg(conn net.Conn) (*Msg, error) {

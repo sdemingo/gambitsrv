@@ -65,7 +65,7 @@ func handleConn(client net.Conn) {
 		if req.Cmd == CREATE {
 			clientGame = NewGame()
 			clientGame.White = NewPlayer(req.User, client)
-			client.Write([]byte(clientGame.Name + "\n"))
+			client.Write(NewMsg(OK, req.User, clientGame.Name).PackMsg())
 			clientName = req.User
 			gameTable[clientGame.Name] = clientGame
 			fmt.Printf("Game created [%s]. White player[%s]\n", clientGame.Name, clientGame.White.User)
@@ -78,12 +78,13 @@ func handleConn(client net.Conn) {
 			}
 
 			if req.User == clientGame.White.User {
-				client.Write([]byte("\n")) // error jugadores con el mismo nombre
+				client.Write(NewMsg(ERROR, req.User,
+					"No se puede usar el mismo nombre que el oponente").PackMsg())
 			}
 
 			clientGame.Black = NewPlayer(req.User, client)
-			client.Write([]byte(clientGame.White.User + "\n"))
-			clientGame.White.Conn.Write([]byte(clientGame.Black.User + "\n"))
+			client.Write(NewMsg(OK, req.User, clientGame.White.User).PackMsg())
+			clientGame.White.Conn.Write(NewMsg(OK, req.User, clientGame.Black.User).PackMsg())
 			clientName = req.User
 			fmt.Printf("Game start [%s]. Black player[%s]\n", clientGame.Name, clientGame.Black.User)
 
@@ -96,8 +97,6 @@ func handleConn(client net.Conn) {
 					fmt.Printf("Game not found [%s]\n", args[0])
 					return
 				}
-
-				// we need search the game in the gametable!! Now only have one game
 				if req.User == clientGame.Black.User {
 					clientGame.White.Conn.Write(req.PackMsg())
 					fmt.Printf("Send move from [%s] to [%s]\n", clientGame.Black.User, clientGame.White.User)
@@ -112,7 +111,7 @@ func handleConn(client net.Conn) {
 
 	fmt.Printf("End connection from %s\n", client.RemoteAddr())
 	if clientGame != nil {
-		msg := NewMsg(END, fmt.Sprintf("El jugador %s ha abandonado la partida", clientName))
+		msg := NewMsg(END, clientName, fmt.Sprintf("El jugador %s ha abandonado la partida", clientName))
 		if clientGame.White != nil && clientGame.White.Conn != nil {
 			clientGame.White.Conn.Write(msg.PackMsg())
 		}
