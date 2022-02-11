@@ -10,8 +10,9 @@ import (
 const PORT = 22022
 
 var clients []net.Conn
+
 //var game *Game
-var gameTable map[string] *Game
+var gameTable map[string]*Game
 
 func RandomString(len int) string {
 	b := make([]byte, len)
@@ -25,7 +26,7 @@ func InitServer() {
 
 	clients = make([]net.Conn, 0)
 	gameTable = make(map[string]*Game)
-	
+
 	for {
 		go handleConn(<-conns)
 	}
@@ -54,7 +55,7 @@ func handleConn(client net.Conn) {
 	var clientGame *Game = nil
 	var clientName string
 	var ok bool
-	
+
 	for {
 		req, err := UnpackMsg(client)
 		if err != nil {
@@ -65,8 +66,8 @@ func handleConn(client net.Conn) {
 			clientGame = NewGame()
 			clientGame.White = NewPlayer(req.User, client)
 			client.Write([]byte(clientGame.Name + "\n"))
-			clientName=req.User
-			gameTable[clientGame.Name]=clientGame
+			clientName = req.User
+			gameTable[clientGame.Name] = clientGame
 			fmt.Printf("Game created [%s]. White player[%s]\n", clientGame.Name, clientGame.White.User)
 		}
 
@@ -76,10 +77,14 @@ func handleConn(client net.Conn) {
 				return
 			}
 
+			if req.User == clientGame.White.User {
+				client.Write([]byte("\n")) // error jugadores con el mismo nombre
+			}
+
 			clientGame.Black = NewPlayer(req.User, client)
 			client.Write([]byte(clientGame.White.User + "\n"))
 			clientGame.White.Conn.Write([]byte(clientGame.Black.User + "\n"))
-			clientName=req.User
+			clientName = req.User
 			fmt.Printf("Game start [%s]. Black player[%s]\n", clientGame.Name, clientGame.Black.User)
 
 		}
@@ -91,7 +96,7 @@ func handleConn(client net.Conn) {
 					fmt.Printf("Game not found [%s]\n", args[0])
 					return
 				}
-				
+
 				// we need search the game in the gametable!! Now only have one game
 				if req.User == clientGame.Black.User {
 					clientGame.White.Conn.Write(req.PackMsg())
@@ -106,14 +111,14 @@ func handleConn(client net.Conn) {
 	}
 
 	fmt.Printf("End connection from %s\n", client.RemoteAddr())
-	if clientGame!=nil{
-		msg:=NewMsg(END,fmt.Sprintf("El jugador %s ha abandonado la partida",clientName))
-		if clientGame.White !=nil && clientGame.White.Conn !=nil{
+	if clientGame != nil {
+		msg := NewMsg(END, fmt.Sprintf("El jugador %s ha abandonado la partida", clientName))
+		if clientGame.White != nil && clientGame.White.Conn != nil {
 			clientGame.White.Conn.Write(msg.PackMsg())
 		}
-		if clientGame.Black !=nil && clientGame.Black.Conn !=nil{
+		if clientGame.Black != nil && clientGame.Black.Conn != nil {
 			clientGame.Black.Conn.Write(msg.PackMsg())
 		}
 	}
-		
+
 }
