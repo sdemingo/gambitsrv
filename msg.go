@@ -2,26 +2,25 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 )
 
 const (
-	ERROR  = "error"
-	OK     = "ok"
-	CREATE = "create"
-	JOIN   = "join"
-	MOVE   = "move"
-	END    = "end"
+	ERROR  = 0
+	OK     = 1
+	CREATE = 2
+	JOIN   = 3
+	MOVE   = 4
+	END    = 5
 )
 
 type Msg struct {
-	Cmd  string
+	Cmd  byte
 	User string
 	Args string
 }
 
-func NewMsg(cmd string, username string, args string) *Msg {
+func NewMsg(cmd byte, username string, args string) *Msg {
 	return &Msg{cmd, username, args}
 }
 
@@ -38,8 +37,4 @@ func UnpackMsg(conn net.Conn) (*Msg, error) {
 func (m *Msg) PackMsg() []byte {
 	b, _ := json.Marshal(m)
 	return b
-}
-
-func (m *Msg) String() string {
-	return fmt.Sprintf("[%s] %s %s\n", m.User, m.Cmd, m.Args)
 }
