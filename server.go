@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
-	"strings"
 )
 
 const PORT = 22022
@@ -91,19 +90,24 @@ func handleConn(client net.Conn) {
 		}
 
 		if req.Cmd == MOVE {
-			args := strings.Split(req.Args, ":")
-			if len(args) == 2 {
-				if clientGame, ok = gameTable[args[0]]; !ok {
-					fmt.Printf("Game not found [%s]\n", args[0])
-					return
-				}
-				if req.User == clientGame.Black.User {
-					clientGame.White.Conn.Write(req.PackMsg())
-					fmt.Printf("Send move from [%s] to [%s]\n", clientGame.Black.User, clientGame.White.User)
-				} else {
-					clientGame.Black.Conn.Write(req.PackMsg())
-					fmt.Printf("Send move from [%s] to [%s]\n", clientGame.White.User, clientGame.Black.User)
-				}
+			if req.User == clientGame.Black.User {
+				clientGame.White.Conn.Write(req.PackMsg())
+				fmt.Printf("Send move from [%s] to [%s]\n", clientGame.Black.User, clientGame.White.User)
+			} else {
+				clientGame.Black.Conn.Write(req.PackMsg())
+				fmt.Printf("Send move from [%s] to [%s]\n", clientGame.White.User, clientGame.Black.User)
+			}
+		}
+
+		if req.Cmd == END {
+			if req.User == clientGame.Black.User {
+				clientGame.White.Conn.Write(NewMsg(END, req.User,
+					fmt.Sprintf("%s ha ganado la partida", clientGame.White.User)).PackMsg())
+				fmt.Printf("Send checkmate. [%s] win the game\n", clientGame.White.User)
+			} else {
+				clientGame.Black.Conn.Write(NewMsg(END, req.User,
+					fmt.Sprintf("%s ha ganado la partida", clientGame.Black.User)).PackMsg())
+				fmt.Printf("Send checkmate. [%s] win the game\n", clientGame.Black.User)
 			}
 		}
 
