@@ -8,4 +8,6 @@ To run a server in your machine use:
 gambitsrv
 ```
 
+You can use `-p` with a port number if you want to use a particular port. By
+default `gambitsrv` use 22022
 

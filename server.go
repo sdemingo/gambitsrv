@@ -4,13 +4,11 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
+	"os"
 )
 
-const PORT = 22022
 
 var clients []net.Conn
-
-//var game *Game
 var gameTable map[string]*Game
 
 func RandomString(len int) string {
@@ -19,8 +17,12 @@ func RandomString(len int) string {
 	return fmt.Sprintf("%x", b)
 }
 
-func InitServer() {
-	srv, _ := net.Listen("tcp", ":"+fmt.Sprintf("%d", PORT))
+func InitServer(port string) {
+	srv, err := net.Listen("tcp", ":"+port)
+	if err!=nil{
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	conns := clientConns(srv)
 
 	clients = make([]net.Conn, 0)
